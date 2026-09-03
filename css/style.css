@@ -177,6 +177,14 @@ h4 { font-size: 1.15rem; }
 .mobile-nav__foot { margin-top: 2rem; font-size: .9rem; color: #b9c2ca; }
 body.nav-open { overflow: hidden; }
 
+/* ---------- Transitions de page ---------- */
+.page-fade main { opacity: 0; transform: translateY(18px); }
+.page-fade.is-loaded main { animation: pagein .5s var(--ease-out) forwards; }
+.is-leaving main, .is-leaving .header, .is-leaving .footer { opacity: 0; transition: opacity .2s ease-out; }
+@keyframes pagein { from { opacity: 0; transform: translateY(18px) } to { opacity: 1; transform: none } }
+@media (prefers-reduced-motion: reduce) { .page-fade main { transform: none; } .page-fade.is-loaded main { animation: pagefade .45s ease-out forwards; } }
+@keyframes pagefade { from { opacity: 0 } to { opacity: 1 } }
+
 /* ---------- Préchargement (accueil) ---------- */
 .preloader {
   position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
@@ -461,9 +469,16 @@ img.is-missing { display: none; }
 .value p { color: var(--zinc-2); }
 
 /* Timeline (histoire — c'est une séquence) */
-.timeline { border-left: 1px solid var(--laiton); padding-left: 2rem; display: grid; gap: 2.2rem; }
+.timeline { position: relative; padding-left: 2rem; display: grid; gap: 2.2rem; }
+.timeline::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 1px; background: rgba(176,141,87,.25); }
+.timeline__progress { position: absolute; left: 0; top: 0; width: 1px; height: 100%; background: var(--laiton); transform: scaleY(0); transform-origin: top; will-change: transform; transition: transform .35s linear; }
 .timeline li { position: relative; }
-.timeline li::before { content: ""; position: absolute; left: calc(-2rem - 4px); top: .6rem; width: 7px; height: 7px; border-radius: 50%; background: var(--laiton); }
+.timeline li::before { content: ""; position: absolute; left: calc(-2rem - 4px); top: .6rem; width: 7px; height: 7px; border-radius: 50%; background: var(--pierre); border: 1px solid var(--laiton); transition: background .4s, transform .4s var(--ease-out); }
+.timeline li.is-reached::before { background: var(--laiton); transform: scale(1.35); }
+.timeline li time, .timeline li p { transition: opacity .5s, transform .6s var(--ease-out); }
+.timeline li p { margin: 0; }
+.timeline li:not(.is-reached) time, .timeline li:not(.is-reached) p { opacity: .35; transform: translateY(6px); }
+@media (prefers-reduced-motion: reduce) { .timeline__progress { transition: none; } .timeline li time, .timeline li p { transform: none; transition: opacity .3s; } }
 .timeline time { font-family: var(--font-display); font-size: 1.3rem; display: block; margin-bottom: .2rem; }
 
 /* ---------- Accordéon FAQ ---------- */

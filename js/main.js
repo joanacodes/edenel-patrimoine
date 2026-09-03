@@ -9,6 +9,11 @@
   /* ---------- Séquence d'entrée ---------- */
   const preloader = $(".preloader");
   const start = performance.now();
+  // Pages sans préchargeur : on affiche dès que le HTML est prêt (sans attendre les images)
+  if (!preloader) {
+    const show = () => requestAnimationFrame(() => document.documentElement.classList.add("is-loaded"));
+    document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", show) : show();
+  }
   window.addEventListener("load", () => {
     // Laisse le temps de lire « Edenel Patrimoine & Gestion » (min. 1,6 s) avant le rideau
     const wait = preloader && !reduceMotion ? Math.max(0, 1600 - (performance.now() - start)) : 0;
@@ -340,6 +345,47 @@
         if (first) first.focus({ preventScroll: true });
       });
     });
+  }
+
+  /* ---------- Frise chronologique : ligne qui suit le défilement ---------- */
+  const timeline = $(".timeline");
+  if (timeline) {
+    const bar = document.createElement("span");
+    bar.className = "timeline__progress"; bar.setAttribute("aria-hidden", "true");
+    timeline.prepend(bar);
+    const items = $$("li", timeline);
+    const update = () => {
+      const r = timeline.getBoundingClientRect();
+      // La ligne suit le défilement : elle atteint le bas de la frise quand celle-ci
+      // arrive au milieu de l'écran, et redescend/remonte avec le visiteur.
+      const anchor = window.innerHeight * 0.6;
+      const p = Math.min(1, Math.max(0, (anchor - r.top) / r.height));
+      bar.style.transform = `scaleY(${p})`;
+      const lineY = r.top + p * r.height;
+      items.forEach((li) => li.classList.toggle("is-reached", li.getBoundingClientRect().top + 8 <= lineY));
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+  }
+
+  /* ---------- Transitions entre pages ---------- */
+  const root = document.documentElement;
+  {
+    document.addEventListener("click", (e) => {
+      const a = e.target.closest("a[href]");
+      if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (a.target === "_blank" || a.hasAttribute("download")) return;
+      const url = new URL(a.href, location.href);
+      if (url.origin !== location.origin) return;
+      if (url.pathname === location.pathname && url.search === location.search) return; // ancre sur la même page
+      if (!/\.html$|\/$/.test(url.pathname)) return;
+      e.preventDefault();
+      root.classList.add("is-leaving");
+      setTimeout(() => { location.href = url.href; }, 200);
+    });
+    // Retour arrière (bfcache) : réaffiche la page
+    window.addEventListener("pageshow", (e) => { if (e.persisted) root.classList.remove("is-leaving"); });
   }
 
   /* ---------- Année du footer ---------- */
