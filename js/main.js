@@ -7,9 +7,15 @@
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ---------- Séquence d'entrée ---------- */
+  const preloader = $(".preloader");
+  const start = performance.now();
   window.addEventListener("load", () => {
-    requestAnimationFrame(() => document.documentElement.classList.add("is-loaded"));
+    // Laisse le temps de lire « Edenel Patrimoine & Gestion » (min. 1,6 s) avant le rideau
+    const wait = preloader && !reduceMotion ? Math.max(0, 1600 - (performance.now() - start)) : 0;
+    setTimeout(() => requestAnimationFrame(() => document.documentElement.classList.add("is-loaded")), wait);
   });
+  // Sécurité : jamais plus de 4 s d'attente, même si une ressource bloque
+  setTimeout(() => document.documentElement.classList.add("is-loaded"), 4000);
 
   /* ---------- Header ---------- */
   const header = $(".header");
@@ -250,6 +256,28 @@
     });
   });
 
+  /* ---------- Diaporama du bandeau (page Nos biens) ---------- */
+  const slidesBox = $("[data-hero-slides]");
+  if (slidesBox && window.EDENEL_BIENS) {
+    const covers = window.EDENEL_BIENS.map((b) => b.images && b.images[0]).filter(Boolean);
+    covers.forEach((src, i) => {
+      const img = document.createElement("img");
+      img.src = src; img.alt = ""; img.decoding = "async";
+      if (i > 0) img.loading = "lazy";
+      slidesBox.appendChild(img);
+    });
+    const imgs = $$("img", slidesBox);
+    let cur = 0;
+    if (imgs.length) imgs[0].classList.add("is-active");
+    if (imgs.length > 1 && !reduceMotion) {
+      setInterval(() => {
+        imgs[cur].classList.remove("is-active");
+        cur = (cur + 1) % imgs.length;
+        imgs[cur].classList.add("is-active");
+      }, 5000);
+    }
+  }
+
   /* ---------- Estimation : résultat indicatif ---------- */
   const estim = $("[data-estimation]");
   if (estim) {
@@ -270,9 +298,19 @@
       out.innerHTML = `
         <span class="kicker">Estimation indicative</span>
         <div class="bien-price">${euro(fmt(mid * 0.94))} – ${euro(fmt(mid * 1.06))}</div>
-        <p class="muted">Cette fourchette est calculée à partir de moyennes départementales et ne remplace pas une visite. Un conseiller Edenel vous contacte sous 24 h pour affiner cette valeur et vous remettre un avis de valeur écrit, sans engagement.</p>`;
+        <p class="muted">Cette fourchette est calculée à partir de moyennes départementales et ne remplace pas une visite. Un conseiller Edenel vous contacte sous 24 h pour affiner cette valeur et vous remettre un avis de valeur écrit, sans engagement.</p>
+        <button class="btn" type="button" data-estimation-reset>Créer une nouvelle estimation</button>`;
       out.classList.add("is-visible");
       estim.style.display = "none";
+      $("[data-estimation-reset]", out).addEventListener("click", () => {
+        estim.reset();
+        out.classList.remove("is-visible");
+        out.innerHTML = "";
+        estim.style.display = "";
+        estim.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+        const first = $("input, select", estim);
+        if (first) first.focus({ preventScroll: true });
+      });
     });
   }
 

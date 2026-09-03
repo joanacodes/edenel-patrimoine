@@ -87,5 +87,5 @@ Le fichier `CNAME` lie le dépôt au domaine edenelpatrimoine.fr.
 
 - Portraits de l'équipe (`team-01.jpg` à `team-04.jpg`)
 
-- Mentions légales : SIRET, carte professionnelle, garantie financière
+- Mentions légales : numéro de carte professionnelle, garantie financière, assurance RC pro, médiateur
 - Formulaires : brancher un service d'envoi (Formspree, Netlify Forms, etc.)
