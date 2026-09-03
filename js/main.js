@@ -206,8 +206,18 @@
     const label = b.type + " — " + b.ville.split(" — ")[0];
     detail.innerHTML = `
       <div class="gallery">
-        ${b.images.map((src, i) => `<div class="ph reveal-img" data-label="${label} · photo ${i + 1}"><img src="${src}" alt="${b.titre}, vue ${i + 1}" ${i ? 'loading="lazy"' : ""}></div>`).join("")}
+        ${b.images.slice(0, 3).map((src, i) => `<div class="ph reveal-img" data-label="${label} · photo ${i + 1}"><img src="${src}" alt="${b.titre}, vue ${i + 1}" ${i ? 'loading="lazy"' : ""}></div>`).join("")}
       </div>
+      ${b.images.length > 3 ? `
+      <div class="gallery-more">
+        <div class="gallery-strip" data-gallery-strip aria-label="Autres photos du bien">
+          ${b.images.slice(3).map((src, i) => `<button type="button" class="ph" data-label="${label} · photo ${i + 4}" data-src="${src}" aria-label="Afficher la photo ${i + 4} en grand"><img src="${src}" alt="${b.titre}, vue ${i + 4}" loading="lazy"></button>`).join("")}
+        </div>
+        <div class="strip-nav gallery-strip__nav">
+          <button type="button" data-gallery-prev aria-label="Photos précédentes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M15 6l-6 6 6 6"/></svg></button>
+          <button type="button" data-gallery-next aria-label="Photos suivantes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 6l6 6-6 6"/></svg></button>
+        </div>
+      </div>` : ""}
       <div class="bien-head">
         <div>
           <span class="kicker">${b.statut === "location" ? "À louer" : "À vendre"} · ${b.ville}</span>
@@ -236,6 +246,24 @@
       <div class="grid-biens">${biens.filter((x) => x.id !== b.id && x.statut === b.statut).slice(0, 3).map(cardHTML).join("")}</div>`;
     guardImages(detail);
     observe(detail);
+
+    // Slider des photos supplémentaires : flèches + clic pour afficher en grand
+    const gstrip = $("[data-gallery-strip]", detail);
+    if (gstrip) {
+      const step = () => gstrip.firstElementChild.offsetWidth + 12;
+      $("[data-gallery-prev]", detail).addEventListener("click", () => gstrip.scrollBy({ left: -step(), behavior: "smooth" }));
+      $("[data-gallery-next]", detail).addEventListener("click", () => gstrip.scrollBy({ left: step(), behavior: "smooth" }));
+      const main = $(".gallery img", detail);
+      gstrip.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-src]");
+        if (!btn || !main) return;
+        const thumb = $("img", btn);
+        const prevSrc = main.src, prevAlt = main.alt;
+        main.src = thumb.src; main.alt = thumb.alt;
+        thumb.src = prevSrc; thumb.alt = prevAlt; btn.dataset.src = prevSrc;
+        main.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "nearest" });
+      });
+    }
   }
 
   /* ---------- Formulaires (démo : pas de backend sur GitHub Pages) ---------- */
